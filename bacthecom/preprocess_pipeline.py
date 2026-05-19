@@ -557,6 +557,14 @@ def preprocess_episodio_ingreso(
     agg.update({column: first_notna for column in categorical_columns if column in df.columns})
 
     result = df.groupby(ADMISSION_KEYS, as_index=False, dropna=False).agg(agg)
+
+    # For staged mortality modelling we use 30-day mortality as the canonical
+    # mortality target. Keep the raw all-cause mortality flag for auditability.
+    if "mortalidad" in result.columns:
+        result["mortalidad_anytime"] = result["mortalidad"]
+    if "mortalidad_30_dias" in result.columns:
+        result["mortalidad"] = result["mortalidad_30_dias"]
+
     result["admission_id"] = (
         result["record_id"].astype("Int64").astype(str)
         + "_"
@@ -580,6 +588,18 @@ def preprocess_episodio_ingreso(
             "then aggregate duplicate selected episode rows"
         ),
     )
+    if "mortalidad_30_dias" in result.columns and "mortalidad" in result.columns:
+        add_change(
+            log,
+            "recoded_variables",
+            source=["mortalidad", "mortalidad_30_dias"],
+            target=["mortalidad", "mortalidad_anytime"],
+            how=(
+                "retain raw mortality as mortalidad_anytime and set mortalidad to "
+                "the 30-day target (mortalidad_30_dias) for staged modelling"
+            ),
+            variable_type="target",
+        )
     log.metadata.update({f"hemoculture_selection_{k}": v for k, v in selection_stats.items()})
     log.notes.append(
         "ML unit is one row per record_id + fecha_ingreso + selected fecha_hemocultivo; "

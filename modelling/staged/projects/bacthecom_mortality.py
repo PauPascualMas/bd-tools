@@ -1,7 +1,6 @@
 """Bacthecom staged mortality project adapter.
 
-Current implementation reuses the three-level engine defaults as a starting
-point; project-specific targets/stages should be provided by config overrides.
+Defaults align with the BAcTHECOM mortality-preprocessed dataset.
 """
 
 from __future__ import annotations
@@ -18,7 +17,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.set_defaults(
         sepsis_target="mortalidad",
         hemo_target="resultado_hemo_grouped",
-        cef_target="mortalidad",
+        cef_target="mortalidad_30_dias",
         optuna_study_prefix="bacthecom_mortality",
     )
     return parser
